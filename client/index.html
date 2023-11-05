@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="stylesheet" href="https://bootswatch.com/5/lux/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div class="container my-5">
+      <h5>Select signer (-1 for metamask)</h5>
+      <div class="mb-4"><input  type="number" placeholder="Signer # (debug)" class="form-control" value="0" id="signerNum"></div>
+      <span class="text-disabled" id="address"></span>
+      <hr>
+      <h5 class="my-5">Create group (one address per line)</h5>
+      <textarea id="addresses" class="form-control mb-3" width="100%" rows="5"></textarea>
+      <button class="btn btn-primary btn-large mx-auto d-block" id="groupCreate">Create Group</button>
+      <hr>
+      <table class="table" id="groups"></table>
+      <hr>
+      <div id="groupWindow"></div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

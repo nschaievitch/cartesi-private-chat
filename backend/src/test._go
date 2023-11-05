@@ -1,0 +1,141 @@
+package main
+
+import (
+	"crypto/ecdsa"
+	"encoding/base64"
+	"fmt"
+	"math/rand"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+func getAddress(k *ecdsa.PrivateKey) Address {
+	pubKey := k.Public()
+	pubKeyECDSA, _ := pubKey.(*ecdsa.PublicKey)
+	return Address(crypto.PubkeyToAddress(*pubKeyECDSA).Hex())
+}
+
+func testRSA() {
+	rng := rand.New(rand.NewSource(time.Now().Unix()))
+	gr := GetGroup()
+
+	groups = make(map[string]Group)
+
+	n := 3
+	RSAKeys := []RSAKeys{}
+	DHKeys := []DHPrivateKey{}
+
+	// Generate Keys
+	for i := 0; i < n; i++ {
+		GenerateRSAKeys(rng)
+		RSAKeys = append(RSAKeys, GenerateRSAKeys(rng))
+		DHKeys = append(DHKeys, GetNewDHPrivateKey(rng, gr))
+	}
+
+	// Create Group
+	addresses := []Address{}
+
+	for _, k := range RSAKeys {
+		addresses = append(addresses, Address(MarshalPubKey(GetPublicKey(k))))
+	}
+
+	g, id := CreateGroup(addresses)
+
+	groups[id] = g
+
+	fmt.Println(g, id)
+
+	// R1
+
+	for i, rsaKey := range RSAKeys {
+		address := Address(MarshalPubKey(GetPublicKey(rsaKey)))
+		signature := SignChunkFromB64(BigIntToB64(DHKeys[i].ga), rsaKey)
+
+		fmt.Println(SubmitR1(id, DHKeys[i].ga, address, base64.StdEncoding.EncodeToString(signature)))
+	}
+
+	fmt.Println("R1 Complete", R1Complete(id))
+
+	// R2
+	for i, rsaKey := range RSAKeys {
+		r2 := BurmesterDesmedtR2(gr, i, DHKeys[i], g.R1)
+		address := Address(MarshalPubKey(GetPublicKey(rsaKey)))
+		signature := SignChunkFromB64(BigIntToB64(r2), rsaKey)
+
+		fmt.Println(SubmitR2(id, r2, address, base64.StdEncoding.EncodeToString(signature)))
+
+	}
+
+	fmt.Println("R2 Complete", R2Complete(id))
+
+	for i, dhKey := range DHKeys {
+		secret := BurmesterDesmedtSecret(gr, i, dhKey, g.R1, g.R2)
+		fmt.Println(BigIntToB64(secret))
+	}
+}
+
+func test() {
+	rng := rand.New(rand.NewSource(time.Now().Unix()))
+	gr := GetGroup()
+
+	n := 3
+
+	ECDSAKeys := []*ecdsa.PrivateKey{}
+	DHKeys := []DHPrivateKey{}
+
+	// Generate Keys
+	for i := 0; i < n; i++ {
+		key, _ := crypto.GenerateKey()
+		ECDSAKeys = append(ECDSAKeys, key)
+		DHKeys = append(DHKeys, GetNewDHPrivateKey(rng, gr))
+	}
+
+	// Create Group
+	addresses := []Address{}
+
+	for _, k := range ECDSAKeys {
+		add := getAddress(k)
+		addresses = append(addresses, add)
+	}
+
+	g, id := CreateGroup(addresses)
+
+	groups[id] = g
+	stateTransitions[id] = make([]StateTransition, 0)
+
+	fmt.Println(g, id)
+
+	// R1
+
+	for i, privKey := range ECDSAKeys {
+		address := getAddress(privKey)
+		hash := crypto.Keccak256Hash([]byte(BigIntToB64(DHKeys[i].ga)))
+		sig, _ := crypto.Sign(hash.Bytes(), privKey)
+		sigHex := hexutil.Encode(sig)
+
+		fmt.Println(SubmitR1(id, DHKeys[i].ga, address, sigHex))
+	}
+
+	fmt.Println("R1 Complete", R1Complete(id))
+
+	// R2
+	for i, privKey := range ECDSAKeys {
+		r2 := BurmesterDesmedtR2(gr, i, DHKeys[i], g.R1)
+		address := getAddress(privKey)
+		hash := crypto.Keccak256Hash([]byte(BigIntToB64(r2)))
+		sig, _ := crypto.Sign(hash.Bytes(), privKey)
+		sigHex := hexutil.Encode(sig)
+
+		fmt.Println(SubmitR2(id, r2, address, sigHex))
+
+	}
+
+	fmt.Println("R2 Complete", R2Complete(id))
+
+	for i, dhKey := range DHKeys {
+		secret := BurmesterDesmedtSecret(gr, i, dhKey, g.R1, g.R2)
+		fmt.Println(BigIntToB64(secret))
+	}
+}

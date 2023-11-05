@@ -1,0 +1,21 @@
+{
+  "name": "browser",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^4.4.5"
+  },
+  "dependencies": {
+    "@cartesi/rollups": "^1.1.0",
+    "@ethersproject/providers": "^5.7.2",
+    "@runno/wasi": "^0.6.1",
+    "crypto-js": "^4.2.0",
+    "ethers": "5.7.2"
+  }
+}

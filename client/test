@@ -1,0 +1,66 @@
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+let a = async () => {
+    let s1 = getNthSigner(0);
+    let s2 = getNthSigner(1);
+    let s3 = getNthSigner(2);
+
+    window.b1 = getInputBox(s1);
+    window.b2 = getInputBox(s2);
+    window.b3 = getInputBox(s3);
+
+    window.k1 = await generateDHKeys();
+    await sleep(1000);
+    window.k2 = await generateDHKeys();
+    await sleep(1000);
+    window.k3 = await generateDHKeys();
+
+    console.log(k1, k2, k3);
+
+    await createGroup(b1, members);
+
+    console.log(await fetchGroups());
+};
+
+let b = async (groupID) => {
+    submitR1(window.b1, groupID, window.k1.r1);
+    submitR1(window.b2, groupID, window.k2.r1);
+    submitR1(window.b3, groupID, window.k3.r1);
+};
+
+let c = async (groupID) => {
+    const gs = await fetchGroups();
+    const group = gs[groupID];
+
+    const r2_1 = await computeR2(group, window.k1);
+    const r2_2 = await computeR2(group, window.k2);
+    const r2_3 = await computeR2(group, window.k3);
+
+    console.log(r2_1, r2_2, r2_3);
+
+    submitR2(window.b1, groupID, r2_1);
+    submitR2(window.b2, groupID, r2_2);
+    submitR2(window.b3, groupID, r2_3);
+};
+
+let d = async (groupID) => {
+    const gs = await fetchGroups();
+    const group = gs[groupID];
+
+    const secret_1 = await computeSecret(group, window.k1);
+    const secret_2 = await computeSecret(group, window.k2);
+    const secret_3 = await computeSecret(group, window.k3);
+
+    console.log(secret_1, secret_2, secret_3);
+};
+
+const groupID = "b202efd7-c71c-42a0-9213-14d70e3204dd";
+
+//a()
+//b(groupID);
+//c(groupID);
+d(groupID);
+
+fetchGroups().then(console.log);
